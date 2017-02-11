@@ -1,7 +1,9 @@
 #!perl
 use warnings;
 use strict;
+use Term::ReadKey;
 
+##apt-get install libterm-readkey-perl
 
 
 my $op;
@@ -43,34 +45,43 @@ sub menu{
   }
 }
 
+sub act{
+  print"configurar";
+}
+
 sub conf{
   system("clear");
-  while(1){
+  while(1)
+  {
     print"1) Configurar Dionaea\n";
     print"2) Configurar Cowrie\n";
     print"3) Configurar Red\n";
     print"4) Salir\n";
 
+    print"Que deseas hacer:\n";
+    $op2=<STDIN>;
+    chomp($op2);
 
-  print"Que deseas hacer:\n";
-  $op2=<STDIN>;
-  chomp($op2);
+    if(!$menuS{$op2})
+    { 
+      warn "Comando desconocido: '$op2'; Prueba 'help' la siguiente vez\n"; 
+    }
+    else
+    {
+      $menuS{$op2}->($op2);
+    }
+  }
+}
 
-  if(!$menuS{$op2})
-  { 
-    warn "Comando desconocido: '$op2'; Prueba 'help' la siguiente vez\n"; 
-  }
-  else
-  {
-    $menuS{$op2}->($op2);
-  }
-}
-}
-sub act{
-  print"configurar";
-}
+
 sub dionaea{
-   print"configurar";
+print"Identificador: ";
+chomp(my $password = <STDIN>),"\n";
+print "Password:";
+ReadMode('noecho'); # no imprime
+chomp(my $password = <STDIN>);
+ReadMode(0);        # back to normal
+print "\n";
 }
 sub crowrie{
    print"configurar";
