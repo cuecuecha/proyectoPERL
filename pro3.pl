@@ -5,7 +5,6 @@ use Term::ReadKey;
 
 ##apt-get install libterm-readkey-perl
 
-
 my $op;
 my $op2;
 my %menuP = (                           
@@ -17,10 +16,20 @@ my %menuP = (
 my %menuS = (                           
     help =>  sub{print"Indica una opción valida\n"},
     1    =>  \&dionaea,
-    2   =>  \&crowrie,
+    2   =>  \&cowrie,
     3   => \&red,
     4   =>  \&menu, 
 );
+
+#variables para la funcion red
+my $ip;
+my $file='interfaces';
+if(!open(FH,'<',$file))
+{
+  warn "No se puede abrir el archivo ",$file," o no existe\n";
+  exit();
+}
+
 
 sub menu{  
   system("clear"); #limpia la pantalla
@@ -75,19 +84,106 @@ sub conf{
 
 
 sub dionaea{
-print"Identificador: ";
-chomp(my $password = <STDIN>),"\n";
-print "Password:";
-ReadMode('noecho'); # no imprime
-chomp(my $password = <STDIN>);
-ReadMode(0);        # back to normal
-print "\n";
+  print"Identificador: ";
+  chomp(my $id = <STDIN>);
+  print "\nPassword:";
+  ReadMode('noecho'); # no imprime
+  chomp(my $password = <STDIN>);
+  ReadMode(0);        # back to normal
+  print "\n";
 }
-sub crowrie{
+sub cowrie{
    print"configurar";
 }
 sub red{
-  print"configurar";
+  print"\nIP: ";
+  $ip=<STDIN>;
+  chomp($ip);
+  if($ip=~/(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/)
+  { 
+    #print"$ip valida \n";
+    #while(<FH>){
+    #  print"en archivo";
+    #  s/.*/$ip/g;
+     # print"se cambio\n";
+    #}
+    `perl -pi -e 's/address (([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9]) */address $ip/g' $file`;
+  }
+  else{
+    print("No es una ip valida\n");
+  }
+
+  print"\nMASCARA: ";
+  my $masc=<STDIN>;
+  chomp($masc);
+  if($masc=~/(255)\.(255|0)\.(255|0)\.(255|0)/ && $masc ne $ip)
+  { 
+    #print"$ip valida \n";
+    #while(<FH>){
+    #  print"en archivo";
+    #  s/.*/$ip/g;
+     # print"se cambio\n";
+    #}
+    `perl -pi -e 's/netmask (255)\.(255|0)\.(255|0)\.(255|0)/netmask $masc/g' $file`;
+  }
+  else{
+    print("No es una mascara valida\n");
+  }
+
+  print"\nNETWORK: ";
+  my $net=<STDIN>;
+  chomp($net);
+  
+  if($net=~/(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/ && $net ne $ip && $net ne $masc)
+  { 
+    #print"$ip valida \n";
+    #while(<FH>){
+    #  print"en archivo";
+    #  s/.*/$ip/g;
+     # print"se cambio\n";
+    #}
+    `perl -pi -e 's/network (([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/address $net/g' $file`;
+  }
+  else{
+    print("No es valida\n");
+  }
+
+  print"\nBROADCAST: ";
+  my $broad=<STDIN>;
+  chomp($broad);
+  if($broad=~/(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/ && $broad ne $ip && $broad ne $masc && $broad ne $net)
+  { 
+    #print"$ip valida \n";
+    #while(<FH>){
+    #  print"en archivo";
+    #  s/.*/$ip/g;
+     # print"se cambio\n";
+    #}
+    `perl -pi -e 's/broadcast (([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/broadcast $broad/g' $file`;
+  }
+  else{
+    print("No es valida\n");
+  }
+
+  print"\nGATEWAY: ";
+  my $gate=<STDIN>;
+  chomp($gate);
+  if($gate=~/(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/&& $gate ne $broad && $gate ne $net && $gate ne $masc && $gate ne $ip)
+  { 
+    #print"$ip valida \n";
+    #while(<FH>){
+    #  print"en archivo";
+    #  s/.*/$ip/g;
+     # print"se cambio\n";
+    #}
+    `perl -pi -e 's/gateway (([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/gateway $gate/g' $file`;
+  }
+  else{
+    print("No es valida\n");
+  }
+
 }
 
 &menu;
+
+close FH;
