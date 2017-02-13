@@ -86,7 +86,7 @@ sub act{
     }
     elsif ($op == 2)
     {
-	   &muestraDionaeaConf(&leeDionaeaConf(\%confDionaea, "dionea.txt"))
+	   &muestraDionaeaConf(&leeDionaeaConf("dionea.txt"))
     }
     elsif ($op == 3)
     {
@@ -399,9 +399,8 @@ sub leeDionaeaConf {
   	} elsif (m|://.*$|) {
   	    $linea .= $_;
   	} elsif (m|\s*//.*$|) {
-  	    $linea .= $`;
+  	    $linea .= $` . "\n";
   	} else {
-  	    chomp $_;
   	    $linea .= $_;
   	}
       }
@@ -411,7 +410,7 @@ sub leeDionaeaConf {
 }
 
 sub muestraDionaeaConf {
-      print $_;  
+      print $_[0];  
     
 }
 
