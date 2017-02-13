@@ -197,14 +197,14 @@ sub procesaDioneaConf {
     return $rc;
 }
 
-sub procesahash {
+sub procesaHash {
     my $rl = shift @_;
     my (%hash, $seccion) = ((), '');
     my ($flag, $i, $delimitador)=('', 0, 0);
     $$rl =~ s/^\s*//;
     if ($$rl=~/([\w_-]+)\s*=\s*/) {
 	$llave = $1;
-	if ($'=~/^\{/) {
+	if ($'=~/^\{/) { # Comienza un hash
 	    $i = length($&);
 	    $delimitador = 1;
 	    while ($delimitador > 0) {
@@ -218,9 +218,8 @@ sub procesahash {
 	    $seccion = substr ($$rl, 0, $i+1);
 	    $seccion =~ s/^\s*\w+\s*=\s*\{\s*//;
 	    $seccion =~ s/\s*\}\s*$//;
-	    $rc->{$llave} = &procesahash($seccion);
-	}
-	if ($'=~/^\[/) {
+	    $rc->{$llave} = &procesaHash(\$seccion);
+	}elsif ($'=~/^\[/) { # Comienza un arreglo
 	    $i = length($&);
 	    $delimitador = 1;
 	    while ($delimitador > 0) {
@@ -232,15 +231,64 @@ sub procesahash {
 		}
 	    }
 	    $seccion = substr ($$rl, 0, $i+1);
-	    $seccion =~ s/^\s*\w+\s*=\s*\{\s*//;
-	    $seccion =~ s/\s*\}\s*$//;
-	    $rc->{$llave} = &procesahash($seccion);
+	    $seccion =~ s/^\s*\w+\s*=\s*\[\s*//;
+	    $seccion =~ s/\s*\]\s*$//;
+	    $rc->{$llave} = &procesArray(\$seccion);
+	} elsif ($'=~/^("[^"]+")/) { # Comienza el valor de un parametro
+	    print 'valor: ', $1, "\n";
 	}
 	print $llave, "\n";
-	$linea = substr ($linea, $i+1, length($linea) - $i + 2);
+	$$rl = substr ($$rl, $i+1, length($$rl) - $i + 2);
 	$i = 0;
     }
     return \%hash;
+}
+
+sub procesaArray {
+    my $rl = shift @_;
+    my (@arr, $seccion) = ((), '');
+    my ($flag, $i, $delimitador)=('', 0, 0);
+    $$rl =~ s/^\s*//;
+    if ($$rl=~/([\w_-]+)\s*=\s*/) {
+	$llave = $1;
+	if ($'=~/^\{/) { # Comienza un hash
+	    $i = length($&);
+	    $delimitador = 1;
+	    while ($delimitador > 0) {
+		$i++;
+		if (substr($$rl, $i, 1) eq '{') {
+		    $delimitador++;
+		} elsif (substr($$rl, $i, 1) eq '}') {
+		    $delimitador--;
+		}
+	    }
+	    $seccion = substr ($$rl, 0, $i+1);
+	    $seccion =~ s/^\s*\w+\s*=\s*\{\s*//;
+	    $seccion =~ s/\s*\}\s*$//;
+	    $rc->{$llave} = &procesaHash(\$seccion);
+	}elsif ($'=~/^\[/) { # Comienza un arreglo
+	    $i = length($&);
+	    $delimitador = 1;
+	    while ($delimitador > 0) {
+		$i++;
+		if (substr($$rl, $i, 1) eq '[') {
+		    $delimitador++;
+		} elsif (substr($$rl, $i, 1) eq ']') {
+		    $delimitador--;
+		}
+	    }
+	    $seccion = substr ($$rl, 0, $i+1);
+	    $seccion =~ s/^\s*\w+\s*=\s*\[\s*//;
+	    $seccion =~ s/\s*\]\s*$//;
+	    $rc->{$llave} = &procesArray(\$seccion);
+	} elsif ($'=~/^("[^"]+")/) { # Comienza el valor de un parametro
+	    print 'valor: ', $1, "\n";
+	}
+	print $llave, "\n";
+	$$rl = substr ($$rl, $i+1, length($$rl) - $i + 2);
+	$i = 0;
+    }
+    return \@arr;
 }
 
 sub muestraDioneaConf {

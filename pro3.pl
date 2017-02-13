@@ -15,6 +15,7 @@ use Term::ReadKey;
 my $op;
 my $op2;
 my %confCowrie=();
+my %confDionaea=();
 my %menuP = (                           
     help =>  sub{print"Indica una opción valida\n"},
     1    =>  \&conf,
@@ -63,7 +64,34 @@ sub menu{
 }
 
 sub act{
-  print"configurar";
+  system("clear"); #limpia la pantalla
+  while(1){
+    print"1) Consultar los parámetros de Cowrie\n";
+    print"2) Consultar los parámetros de Dionaea\n";
+    print"3) Regresar\n";
+
+
+    print"Que deseas hacer:\n";
+    $op=<STDIN>;
+    chomp($op);
+
+    if(($op != 1) || ($op != 2) || ($op != 3))
+    { 
+      warn "Comando desconocido: `$op'; Prueba 'help' la siguiente vez\n"; 
+    }
+    elsif ($op == 1)
+    {
+	&muestraCowrieConf(&leeCowrieConf(\%confCowrie, "cowrie.txt"))
+    }
+    elsif ($op == 3)
+    {
+	&muestraDionaeaConf(&leeDionaeaConf(\%confDionaea, "dionea.txt"))
+    }
+    elsif ($op == 3)
+    {
+	return;
+    }
+  }
 }
 
 =head2 conf
