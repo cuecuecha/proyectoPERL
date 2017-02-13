@@ -39,6 +39,11 @@ if(!open(FH,'<',$file))
   exit();
 }
 
+#variables para conf
+my $cowrie = 'cowrie.txt';
+open COW,"<",$cowrie;
+my $id;
+my $password;
 
 sub menu{  
   system("clear"); #limpia la pantalla
@@ -86,7 +91,7 @@ sub act{
     }
     elsif ($op == 2)
     {
-	   &muestraDionaeaConf(&leeDionaeaConf(\%confDionaea, "dionea.txt"))
+	   &muestraDionaeaConf(&leeDionaeaConf(\%confDionaea, "dionaea.txt"))
     }
     elsif ($op == 3)
     {
@@ -143,21 +148,28 @@ sub conf{
 
 
 sub dionaea{
+  my $dionaea='dionaea.txt';
   print"Identificador: ";
   chomp(my $id = <STDIN>);
+  `perl -pi -e 's/user \=  \"([A-Za-z0-9_])*\"\$/user \= \"$id\"/' $dionaea`;
   print "\nPassword:";
   ReadMode('noecho'); # no imprime
   chomp(my $password = <STDIN>);
   ReadMode(0);        # back to normal
+  `perl -pi -e 's/pass \=  \"([A-Za-z0-9_])\"\$/pass \= \"$password\"/' $dionaea`;
   print "\n";
 }
 sub cowrie{
   print"Identificador: ";
-  chomp(my $id = <STDIN>);
+  $id = <STDIN>;
+  chomp($id);
+  `perl -pi -e 's/username \= ([A-Za-z0-9_\.])*\$/username \= $id/' $cowrie`;
   print "\nPassword:";
   ReadMode('noecho'); # no imprime
-  chomp(my $password = <STDIN>);
+  $password = <STDIN>;
+  chomp($password);
   ReadMode(0);        # back to normal
+  `perl -pi -e 's/password \= ([A-Za-z0-9_\.])*\$/password \= $password/' $cowrie`;
   print "\n";
 }
 

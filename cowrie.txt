@@ -274,7 +274,7 @@ enabled = false
 #[database_xmpp]
 #server = sensors.carnivore.it
 #user = anonymous@sensors.carnivore.it
-#password = anonymous
+#password = serposible
 #muc = dionaea.sensors.carnivore.it
 #signal_createsession = cowrie-events
 #signal_connectionlost = cowrie-events
@@ -355,8 +355,8 @@ logfile = log/cowrie.json
 #[output_mysql]
 #host = localhost
 #database = cowrie
-#username = cowrie
-#password = secret
+#username = puede
+#password = serposible
 #port = 3306
 #debug = false
 
@@ -394,8 +394,8 @@ logfile = log/cowrie.json
 #[output_splunklegacy]
 #host = localhost
 #port = 8889
-#username = admin
-#password = password
+#username = puede
+#password = serposible
 #index = cowrie
 
 
