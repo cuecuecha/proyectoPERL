@@ -4,11 +4,16 @@ use warnings;
 use strict;
 
 #my %confC;
-#&leeCowrieConf(\%confD, "./cowrie.cfg");
+#&leeCowrieConf(\%confC, "./cowrie.cfg");
 #&muestraCowrieConf(\%confC, "./ninguno.txt");
 
 my %confD;
-&leeDioneaConf(\%confD, "./dionea.cfg");
+my $l =  &leeDioneaConf("./dionea.cfg");
+&procesaDioneaConf(\%confD, $l);
+
+#for (keys %confD) {
+#    print $_, "\n";
+#}
 
 =head2 leeCowrieConf
 
@@ -34,8 +39,11 @@ sub leeCowrieConf {
 	open CONF, "<", $archivo;
 
 	while (<CONF>) {
-	    next if (/^\s*#/);
-	    next if (/^$/);
+	    next if (/^\s*#/);  # Comentario, ignorarlo
+	    next if (/^$/);     # Linea vacia, ignorarla.
+	    if (/^.*#/) {
+		$_ = $';
+	    }
 	    if (/^\s*\[(\w+)\]\s*$/) {  # Inicia una seccion
 		$nombre = $1;
 		$seccion++;
@@ -86,21 +94,87 @@ sub muestraCowrieConf {
 }
 
 sub leeDioneaConf {
-    my ($rc, $archivo) = @_;
-    my $linea = '';
+    my $archivo =  shift @_;
+    my ($comml, $linea) = (0, '');
 
-    if ($archivo ne '') { # Tenemos un nombre de archivo
-	open CONF, "<", $archivo;
-
-	while (<CONF>) {
-	    $linea .= $_;
-	}
-	close CONF;
-    } else {
+    if ($archivo eq '') { # Tenemos un nombre de archivo
 	return -1;
     }
-    print $linea, "\n";
+    open CONF, "<", $archivo;
+
+    while (<CONF>) {
+	next if (/^\s*$/);    # Linea vacia, ignorarla.
+	next if (/^\s*#/); # Comentario, ignorarlo.
+	next if (m|^\s*//|); # Comentario, ignorarlo,
+	if (m|^\s*/\*|) {  # Inicia comentario multilinea
+	    $comml = 1;
+	    do {
+		$_ = <CONF>;
+		if ( m|^\s*\*/|) { # Termina comentario multilinea
+		    $comml = 0;
+		}
+	    } while ($comml);
+	    next;
+	} elsif (m|://.*$|) {
+	    $linea .= $_;
+	} elsif (m|\s*//.*$|) {
+	    $linea .= $`;
+	} else {
+	    chomp $_;
+	    $linea .= $_;
+	}
+    }
+    return $linea;
+}
+
+sub procesaDioneaConf {
+    my ($rc, $linea) = @_;
+    my ($i, $delimitador) = (0, 0);
+    my ($seccion, $flag, $param, $valor, $llave);
+    $linea =~ s/^\s*//;
+    while ($linea) {
+	if ($linea=~/([\w_-]+)\s*=\s*\{/) {
+	    $llave = $1;
+	    $rc->{$llave} = {};
+	    $i = length($&);
+	    $delimitador = 1;
+	    while ($delimitador > 0) {
+		$i++;
+		if (substr($linea, $i, 1) eq '{') {
+		    $delimitador++;
+		} elsif (substr($linea, $i, 1) eq '}') {
+		    $delimitador--;
+		}
+	    }
+	    $seccion = substr ($linea, 0, $i+1);
+	    $seccion =~ s/^\s*\w+\s*=\s*\{\s*//;
+	    $seccion =~ s/\s*\}\s*$//;
+#	    print $seccion, "\n";
+	    while ($seccion) {
+		if ($seccion=~/([\w_-]+)\s*=\s*/) {
+		    $llave = $1;
+		    if ($'=~/\{\s*/) {  # Hash
+			$seccion = $';
+		    } elsif ($'=~/\[\s*/) { # Arreglo
+			print 'array ', $llave, "\n";
+			$seccion = $';
+		    } elsif ($'=~/("[^"]+")\s*/) { # Definicion de un parametro
+			$param = $1;
+			$seccion = $';
+		    }
+		}
+	    }
+	    $linea = substr ($linea, $i+1, length($linea) - $i + 2);
+	    $i = 0;
+	}
+    }
     return $rc;
+}
+
+sub procesaSeccionDionea {
+    my $linea = shift @_;
+    if ($linea=~/(\w+)\s*=\s*\{/) {
+    }
 }
 
 sub muestraDioneaConf {
