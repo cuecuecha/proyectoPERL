@@ -91,11 +91,10 @@ sub act{
     }
     elsif ($op == 2)
     {
-<<<<<<< HEAD
-	   &muestraDionaeaConf(&leeDionaeaConf(\%confDionaea, "dionaea.txt"))
-=======
+
+	   #&muestraDionaeaConf(&leeDionaeaConf(\%confDionaea, "dionaea.txt"))
+
 	   &muestraDionaeaConf(&leeDionaeaConf("dionea.txt"))
->>>>>>> e0d205996300e159870dcb066c3178a18d6f3573
     }
     elsif ($op == 3)
     {
