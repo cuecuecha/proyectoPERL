@@ -4,9 +4,10 @@ use warnings;
 use strict;
 
 #my %confC;
+#my %newOpc = (seccion=>"otra_seccion", parametro => "nuevo", valor=>"valor" );
 #&leeCowrieConf(\%confC, "./cowrie.cfg");
+#&addOpcionCowrie(\%confC, \%newOpc);
 #&muestraCowrieConf(\%confC, "./ninguno.txt");
-
 my %confD;
 my $l =  &leeDioneaConf("./dionea.cfg");
 &procesaDioneaConf(\%confD, $l);
@@ -93,6 +94,45 @@ sub muestraCowrieConf {
     close $fh;
 }
 
+=head2 addOpcionCowrie
+
+ Agrega una opcion en una seccion.
+
+ Recibe un hash con las opciones cargadas desde el archivo de configuracion
+ y un hash con el siguiente formato:
+ entrada = {
+              seccion   => "nombre"
+              parametro => "nombre de la opcion"
+              valor     => "valor del parametro"
+           }
+
+ agrega esas opciones al hash para estar disponibles y ser escritas a un
+ archivo cuando sea requerido.
+=cut
+sub addOpcionCowrie {
+    my ($rc, $e) = @_;
+    my $llave = &lugarCowrieConf ($rc, $e->{seccion});
+
+    if ($llave == -1) { # Agregamos una nueva seccion
+	$llave = 0;
+	for(sort keys %$rc) { $llave++; }
+	$rc->{$llave}[0] = $e->{seccion};
+    }
+    $rc->{$llave}[1]{$e->{parametro}} = $e->{valor};
+}
+
+# lugarCowrieConf recibe un hash y el nombre de una seccion.
+# Regresa el lugar en el hash donde se encuentra, -1 si no existe.
+# El valor -1 se utiliza para indicar que se puede agregar al hash.
+sub lugarCowrieConf {
+    my ($rc, $seccion) = @_;
+
+    for(sort keys %$rc) {
+	return $_ if ($seccion eq $rc->{$_}[0]);
+    }
+    return -1;
+}
+
 sub leeDioneaConf {
     my $archivo =  shift @_;
     my ($comml, $linea) = (0, '');
@@ -135,7 +175,6 @@ sub procesaDioneaConf {
     while ($linea) {
 	if ($linea=~/([\w_-]+)\s*=\s*\{/) {
 	    $llave = $1;
-	    $rc->{$llave} = {};
 	    $i = length($&);
 	    $delimitador = 1;
 	    while ($delimitador > 0) {
@@ -149,21 +188,8 @@ sub procesaDioneaConf {
 	    $seccion = substr ($linea, 0, $i+1);
 	    $seccion =~ s/^\s*\w+\s*=\s*\{\s*//;
 	    $seccion =~ s/\s*\}\s*$//;
-#	    print $seccion, "\n";
-	    while ($seccion) {
-		if ($seccion=~/([\w_-]+)\s*=\s*/) {
-		    $llave = $1;
-		    if ($'=~/\{\s*/) {  # Hash
-			$seccion = $';
-		    } elsif ($'=~/\[\s*/) { # Arreglo
-			print 'array ', $llave, "\n";
-			$seccion = $';
-		    } elsif ($'=~/("[^"]+")\s*/) { # Definicion de un parametro
-			$param = $1;
-			$seccion = $';
-		    }
-		}
-	    }
+	    $rc->{$llave} = &procesahash(\$seccion);
+	    print $llave, "\n";
 	    $linea = substr ($linea, $i+1, length($linea) - $i + 2);
 	    $i = 0;
 	}
@@ -171,10 +197,50 @@ sub procesaDioneaConf {
     return $rc;
 }
 
-sub procesaSeccionDionea {
-    my $linea = shift @_;
-    if ($linea=~/(\w+)\s*=\s*\{/) {
+sub procesahash {
+    my $rl = shift @_;
+    my (%hash, $seccion) = ((), '');
+    my ($flag, $i, $delimitador)=('', 0, 0);
+    $$rl =~ s/^\s*//;
+    if ($$rl=~/([\w_-]+)\s*=\s*/) {
+	$llave = $1;
+	if ($'=~/^\{/) {
+	    $i = length($&);
+	    $delimitador = 1;
+	    while ($delimitador > 0) {
+		$i++;
+		if (substr($$rl, $i, 1) eq '{') {
+		    $delimitador++;
+		} elsif (substr($$rl, $i, 1) eq '}') {
+		    $delimitador--;
+		}
+	    }
+	    $seccion = substr ($$rl, 0, $i+1);
+	    $seccion =~ s/^\s*\w+\s*=\s*\{\s*//;
+	    $seccion =~ s/\s*\}\s*$//;
+	    $rc->{$llave} = &procesahash($seccion);
+	}
+	if ($'=~/^\[/) {
+	    $i = length($&);
+	    $delimitador = 1;
+	    while ($delimitador > 0) {
+		$i++;
+		if (substr($$rl, $i, 1) eq '[') {
+		    $delimitador++;
+		} elsif (substr($$rl, $i, 1) eq ']') {
+		    $delimitador--;
+		}
+	    }
+	    $seccion = substr ($$rl, 0, $i+1);
+	    $seccion =~ s/^\s*\w+\s*=\s*\{\s*//;
+	    $seccion =~ s/\s*\}\s*$//;
+	    $rc->{$llave} = &procesahash($seccion);
+	}
+	print $llave, "\n";
+	$linea = substr ($linea, $i+1, length($linea) - $i + 2);
+	$i = 0;
     }
+    return \%hash;
 }
 
 sub muestraDioneaConf {

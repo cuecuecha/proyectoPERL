@@ -14,6 +14,7 @@ use Term::ReadKey;
 =cut
 my $op;
 my $op2;
+my %confCowrie=();
 my %menuP = (                           
     help =>  sub{print"Indica una opción valida\n"},
     1    =>  \&conf,
@@ -134,7 +135,8 @@ sub red{
   print"\nIP: ";
   $ip=<STDIN>;
   chomp($ip);
-  if($ip=~/(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/)
+  ###  if($ip=~/(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/)
+  if(ipValida($ip))  
   { 
     if($ip=~/^10/)
     {
@@ -203,6 +205,176 @@ sub red{
     print("No es valida\n");
   }
 
+}
+
+=head2 leeCowrieConf
+
+ Recibe un hash y el nombre del archivo donde esta la configuracion.
+ Entrega una referencia a un hash con la estructura:
+
+ configuracion => {
+     <num> => [ "nombre de seccion",
+                {
+                  "parametro 1" => "valor 1",
+                   ...
+                  "parametro n" => "valor n",
+                }
+              ]
+    }
+ La rutina revisa que haya recibido un nombre archivo no vacio, si no es asi regresa el valor -1.
+=cut
+sub leeCowrieConf {
+    my ($rc, $archivo) = @_;
+    my ($nombre, $seccion) = ('', -1);
+
+    if ($archivo ne '') { # Tenemos un nombre de archivo
+	open CONF, "<", $archivo;
+
+	while (<CONF>) {
+	    next if (/^\s*#/);  # Comentario, ignorarlo
+	    next if (/^$/);     # Linea vacia, ignorarla.
+	    if (/^.*#/) {
+		$_ = $';
+	    }
+	    if (/^\s*\[(\w+)\]\s*$/) {  # Inicia una seccion
+		$nombre = $1;
+		$seccion++;
+		$rc->{$seccion} = [$nombre, {} ];
+	    } else {
+		if (/^\s*\b([\w_-]+)\b\s*=\s*(.*)\s*$/){ # parametro = valor
+		    $rc->{$seccion}[1]{$1} = $2;
+		}
+	    }
+	}
+	close CONF;
+    } else {
+	return -1;
+    }
+    return $rc;
+}
+
+=head2 muestraCowrieConf
+ Muestra el contenido de la configuracion de Cowrie desde un hash que antes
+ haya pasado por la rutina leeCowrieConf.
+
+ Si recibe el nombre de un archivo como segundo argumento, entonces guarda
+ la configuracion en dicho archivo.
+=cut
+sub muestraCowrieConf {
+    my $r = shift @_;
+    my $archivo = shift @_;
+    my $fh;
+
+    if ($archivo && ($archivo ne '')) { # Guardar en archivo el contenido del hash
+	if ((stat $archivo)[3] > 0) {
+	    print STDERR "Sobre escribiendo el archivo $archivo.\n";
+	}
+	open $fh, ">", $archivo;
+    } else {              # Redireccionar la salida a la salida estandar.
+	open $fh, ">&STDOUT";
+    }
+
+    # A partir de aqui todo se manda al archivo manejado por $fh
+    for my $k (sort keys %$r) {
+	print $fh "[$r->{$k}[0]]\n";
+	for (keys %{$r->{$k}[1]}) {
+	    print $fh $_,' = ', $r->{$k}[1]{$_}, "\n";
+	}
+	print $fh "\n";
+    }
+    close $fh;
+}
+
+=head2 addOpcionCowrie
+
+ Agrega una opcion en una seccion.
+
+ Recibe un hash con las opciones cargadas desde el archivo de configuracion
+ y un hash con el siguiente formato:
+ entrada = {
+              seccion   => "nombre"
+              parametro => "nombre de la opcion"
+              valor     => "valor del parametro"
+           }
+
+ agrega esas opciones al hash para estar disponibles y ser escritas a un
+ archivo cuando sea requerido.
+=cut
+sub addOpcionCowrie {
+    my ($rc, $e) = @_;
+    my $llave = &lugarCowrieConf ($rc, $e->{seccion});
+
+    if ($llave == -1) { # Agregamos una nueva seccion
+	$llave = 0;
+	for(sort keys %$rc) { $llave++; }
+	$rc->{$llave}[0] = $e->{seccion};
+    }
+    $rc->{$llave}[1]{$e->{parametro}} = $e->{valor};
+}
+
+# lugarCowrieConf recibe un hash y el nombre de una seccion.
+# Regresa el lugar en el hash donde se encuentra, -1 si no existe.
+# El valor -1 se utiliza para indicar que se puede agregar al hash.
+sub lugarCowrieConf {
+    my ($rc, $seccion) = @_;
+
+    for(sort keys %$rc) {
+	return $_ if ($seccion eq $rc->{$_}[0]);
+    }
+    return -1;
+}
+
+sub leeDionaeaConf {
+    my $archivo =  shift @_;
+    my ($comml, $linea) = (0, '');
+
+    if ($archivo eq '') { # Tenemos un nombre de archivo
+	return -1;
+    }
+    open CONF, "<", $archivo;
+
+    while (<CONF>) {
+	next if (/^\s*$/);    # Linea vacia, ignorarla.
+	next if (/^\s*#/); # Comentario, ignorarlo.
+	next if (m|^\s*//|); # Comentario, ignorarlo,
+	if (m|^\s*/\*|) {  # Inicia comentario multilinea
+	    $comml = 1;
+	    do {
+		$_ = <CONF>;
+		if ( m|^\s*\*/|) { # Termina comentario multilinea
+		    $comml = 0;
+		}
+	    } while ($comml);
+	    next;
+	} elsif (m|://.*$|) {
+	    $linea .= $_;
+	} elsif (m|\s*//.*$|) {
+	    $linea .= $`;
+	} else {
+	    chomp $_;
+	    $linea .= $_;
+	}
+    }
+    return $linea;
+}
+
+sub muestraDionaeaConf {
+    print $_;
+}
+
+=pod  ipValida recibe como parametro una cadena y dice si es una direccion ip valida.
+=cut
+#
+# Recibe una cadena que debe tener solo una direccion ip.
+# Si la cadena tiene cualquier cosa que no sea una ip regresa 0;
+sub ipValida{
+    if ($_[0]=~ /^\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b$/)
+	{
+		return 1;
+	}
+	else {
+		return 0;
+	}
 }
 
 &menu;
