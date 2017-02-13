@@ -12,8 +12,8 @@ iface lo inet loopback
 # Static IP address
 auto eth0
 iface eth0 inet static
-        address 1.1.1.1
+        address 10.0.2.3
         netmask 255.0.0.0
-        network 1.1.1.2
-        broadcast 1.1.1.255
-        gateway 1.1.1.254
+        network 10.0.2.255
+        broadcast 10.0.2.254
+        gateway 10.0.2.1

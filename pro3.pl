@@ -2,9 +2,16 @@
 use warnings;
 use strict;
 use Term::ReadKey;
+=head1 Menu
+=pod
+  Se necesita instalar apt-get install libterm-readkey-perl
 
-##apt-get install libterm-readkey-perl
+  La funcion menu, recibira un parametro, ya sea configurar, consultar o salir
+  
+  
 
+
+=cut
 my $op;
 my $op2;
 my %menuP = (                           
@@ -58,6 +65,20 @@ sub act{
   print"configurar";
 }
 
+=head2 conf
+=pod
+  Esta funcion, es un submenu al elegir la primer opcion
+  Esta se encarga de realizar las confguraciones
+  Recibe un parametro, ya sea configurar Dionaea, Coerie, configurar Red o salir,
+  ésta opcion te regresara al menu principal.
+
+  Ejemplo
+    1) Configurar Dionaea
+    2) Configurar Cowrie
+    3) Configurar Red
+    4) Salir
+
+=cut
 sub conf{
   system("clear");
   while(1)
@@ -95,18 +116,42 @@ sub dionaea{
 sub cowrie{
    print"configurar";
 }
+
+=head2 Red
+=pod
+    Recibira cinco parametros: IP, MASCARA, NETWORK, BROADCAST, GATEGAY y 
+    lo modificara en el archivo "interfaces" que se ubica en /etc/network/
+
+    Ejemplo Red:
+      IP:
+      MASCARA:
+      NETWORK:
+      BROADCAST:
+      GATEWAY:
+=cut
+
 sub red{
   print"\nIP: ";
   $ip=<STDIN>;
   chomp($ip);
   if($ip=~/(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/)
   { 
-    #print"$ip valida \n";
-    #while(<FH>){
-    #  print"en archivo";
-    #  s/.*/$ip/g;
-     # print"se cambio\n";
-    #}
+    if($ip=~/^10/)
+    {
+      print"Es clase A. Te recomiendo una mascara de 255.0.0.0\n";
+    }
+    elsif($ip=~/^172\.16/)
+    {
+      print"Es clase B. Te recomiendo una mascara de 255.255.0.0\n";
+    }
+    elsif($ip=~/^192\.168/)
+    {
+      print"Es clase C. Te recomiendo una mascara de 255.255.255.0\n";
+    }
+    else
+    {
+      print"No pertenece a alguna clase\n";
+    }
     `perl -pi -e 's/address (([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\$/address $ip/' $file`;
   }
   else{
@@ -118,12 +163,6 @@ sub red{
   chomp($masc);
   if($masc=~/(255)\.(255|[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.(255|[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.(255|[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])/ && $masc ne $ip)
   { 
-    #print"$ip valida \n";
-    #while(<FH>){
-    #  print"en archivo";
-    #  s/.*/$ip/g;
-     # print"se cambio\n";
-    #}
     `perl -pi -e 's/netmask (255)\.(255|0)\.(255|0)\.(255|0)\$/netmask $masc/' $file`;
   }
   else{
@@ -136,12 +175,6 @@ sub red{
   
   if($net=~/(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/ && $net ne $ip && $net ne $masc)
   { 
-    #print"$ip valida \n";
-    #while(<FH>){
-    #  print"en archivo";
-    #  s/.*/$ip/g;
-     # print"se cambio\n";
-    #}
     `perl -pi -e 's/network (([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\$/network $net/' $file`;
   }
   else{
@@ -153,12 +186,6 @@ sub red{
   chomp($broad);
   if($broad=~/(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/ && $broad ne $ip && $broad ne $masc && $broad ne $net)
   { 
-    #print"$ip valida \n";
-    #while(<FH>){
-    #  print"en archivo";
-    #  s/.*/$ip/g;
-     # print"se cambio\n";
-    #}
     `perl -pi -e 's/broadcast (([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\$/broadcast $broad/' $file`;
   }
   else{
@@ -170,12 +197,6 @@ sub red{
   chomp($gate);
   if($gate=~/(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])/&& $gate ne $broad && $gate ne $net && $gate ne $masc && $gate ne $ip)
   { 
-    #print"$ip valida \n";
-    #while(<FH>){
-    #  print"en archivo";
-    #  s/.*/$ip/g;
-     # print"se cambio\n";
-    #}
     `perl -pi -e 's/gateway (([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\$/gateway $gate/' $file`;
   }
   else{
