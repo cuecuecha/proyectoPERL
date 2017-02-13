@@ -66,30 +66,39 @@ sub menu{
 sub act{
   system("clear"); #limpia la pantalla
   while(1){
-    print"1) Consultar los parámetros de Cowrie\n";
-    print"2) Consultar los parámetros de Dionaea\n";
-    print"3) Regresar\n";
+    print"1) Consultar los parametros de Cowrie\n";
+    print"2) Consultar los parametros de Dionaea\n";
+    print"3) Consultar los parametros de Red\n";
+    print"4) Regresar\n";
 
 
     print"Que deseas hacer:\n";
     $op=<STDIN>;
     chomp($op);
 
-    if(($op != 1) || ($op != 2) || ($op != 3))
+    if(($op != 1) && ($op != 2) && ($op != 3) && ($op != 4))
     { 
       warn "Comando desconocido: `$op'; Prueba 'help' la siguiente vez\n"; 
     }
     elsif ($op == 1)
     {
-	&muestraCowrieConf(&leeCowrieConf(\%confCowrie, "cowrie.txt"))
+	   &muestraCowrieConf(&leeCowrieConf(\%confCowrie, "cowrie.txt"))
+    }
+    elsif ($op == 2)
+    {
+	   &muestraDionaeaConf(&leeDionaeaConf(\%confDionaea, "dionea.txt"))
     }
     elsif ($op == 3)
     {
-	&muestraDionaeaConf(&leeDionaeaConf(\%confDionaea, "dionea.txt"))
+	   while(<FH>)
+     {
+      print $_;
+     }
+     close INT;
     }
-    elsif ($op == 3)
+    elsif($op==4)
     {
-	return;
+      return;
     }
   }
 }
@@ -143,7 +152,13 @@ sub dionaea{
   print "\n";
 }
 sub cowrie{
-   print"configurar";
+  print"Identificador: ";
+  chomp(my $id = <STDIN>);
+  print "\nPassword:";
+  ReadMode('noecho'); # no imprime
+  chomp(my $password = <STDIN>);
+  ReadMode(0);        # back to normal
+  print "\n";
 }
 
 =head2 Red
@@ -255,23 +270,26 @@ sub leeCowrieConf {
     my ($rc, $archivo) = @_;
     my ($nombre, $seccion) = ('', -1);
 
-    if ($archivo ne '') { # Tenemos un nombre de archivo
-	open CONF, "<", $archivo;
+    if ($archivo ne '') 
+    { # Tenemos un nombre de archivo
+	   open CONF, "<", $archivo;
 
-	while (<CONF>) {
-	    next if (/^\s*#/);  # Comentario, ignorarlo
-	    next if (/^$/);     # Linea vacia, ignorarla.
-	    if (/^.*#/) {
-		$_ = $';
-	    }
-	    if (/^\s*\[(\w+)\]\s*$/) {  # Inicia una seccion
-		$nombre = $1;
-		$seccion++;
-		$rc->{$seccion} = [$nombre, {} ];
-	    } else {
-		if (/^\s*\b([\w_-]+)\b\s*=\s*(.*)\s*$/){ # parametro = valor
-		    $rc->{$seccion}[1]{$1} = $2;
-		}
+	   while (<CONF>) {
+  	    next if (/^\s*#/);  # Comentario, ignorarlo
+  	    next if (/^$/);     # Linea vacia, ignorarla.
+  	    if (/^.*#/) 
+        {
+  		    $_ = $';
+  	    }
+  	    if (/^\s*\[(\w+)\]\s*$/) 
+        {  # Inicia una seccion
+      		$nombre = $1;
+      		$seccion++;
+      		$rc->{$seccion} = [$nombre, {} ];
+  	    } else {
+  		    if (/^\s*\b([\w_-]+)\b\s*=\s*(.*)\s*$/){ # parametro = valor
+  		    $rc->{$seccion}[1]{$1} = $2;
+  		  }
 	    }
 	}
 	close CONF;
@@ -293,22 +311,25 @@ sub muestraCowrieConf {
     my $archivo = shift @_;
     my $fh;
 
-    if ($archivo && ($archivo ne '')) { # Guardar en archivo el contenido del hash
-	if ((stat $archivo)[3] > 0) {
-	    print STDERR "Sobre escribiendo el archivo $archivo.\n";
-	}
-	open $fh, ">", $archivo;
-    } else {              # Redireccionar la salida a la salida estandar.
-	open $fh, ">&STDOUT";
+    if ($archivo && ($archivo ne ''))
+    { # Guardar en archivo el contenido del hash
+    	if ((stat $archivo)[3] > 0) {
+    	    print STDERR "Sobre escribiendo el archivo $archivo.\n";
+    	}
+      	open $fh, ">", $archivo;
+          } else {              # Redireccionar la salida a la salida estandar.
+      	open $fh, ">&STDOUT";
     }
 
     # A partir de aqui todo se manda al archivo manejado por $fh
-    for my $k (sort keys %$r) {
-	print $fh "[$r->{$k}[0]]\n";
-	for (keys %{$r->{$k}[1]}) {
-	    print $fh $_,' = ', $r->{$k}[1]{$_}, "\n";
-	}
-	print $fh "\n";
+    for my $k (sort keys %$r) 
+    {
+	   print $fh "[$r->{$k}[0]]\n";
+	   for (keys %{$r->{$k}[1]}) 
+     {
+	     print $fh $_,' = ', $r->{$k}[1]{$_}, "\n";
+	   }
+	   print $fh "\n";
     }
     close $fh;
 }
@@ -333,9 +354,9 @@ sub addOpcionCowrie {
     my $llave = &lugarCowrieConf ($rc, $e->{seccion});
 
     if ($llave == -1) { # Agregamos una nueva seccion
-	$llave = 0;
-	for(sort keys %$rc) { $llave++; }
-	$rc->{$llave}[0] = $e->{seccion};
+    	$llave = 0;
+    	for(sort keys %$rc) { $llave++; }
+    	$rc->{$llave}[0] = $e->{seccion};
     }
     $rc->{$llave}[1]{$e->{parametro}} = $e->{valor};
 }
@@ -357,37 +378,41 @@ sub leeDionaeaConf {
     my ($comml, $linea) = (0, '');
 
     if ($archivo eq '') { # Tenemos un nombre de archivo
-	return -1;
+	     return -1;
     }
     open CONF, "<", $archivo;
 
-    while (<CONF>) {
-	next if (/^\s*$/);    # Linea vacia, ignorarla.
-	next if (/^\s*#/); # Comentario, ignorarlo.
-	next if (m|^\s*//|); # Comentario, ignorarlo,
-	if (m|^\s*/\*|) {  # Inicia comentario multilinea
+    while (<CONF>) 
+    {
+    	next if (/^\s*$/);    # Linea vacia, ignorarla.
+    	next if (/^\s*#/); # Comentario, ignorarlo.
+    	next if (m|^\s*//|); # Comentario, ignorarlo,
+    	if (m|^\s*/\*|) {  # Inicia comentario multilinea
 	    $comml = 1;
 	    do {
-		$_ = <CONF>;
-		if ( m|^\s*\*/|) { # Termina comentario multilinea
-		    $comml = 0;
-		}
+    		$_ = <CONF>;
+    		if ( m|^\s*\*/|) { # Termina comentario multilinea
+    		    $comml = 0;
+    		}
 	    } while ($comml);
-	    next;
-	} elsif (m|://.*$|) {
-	    $linea .= $_;
-	} elsif (m|\s*//.*$|) {
-	    $linea .= $`;
-	} else {
-	    chomp $_;
-	    $linea .= $_;
-	}
-    }
+  	    next;
+  	} elsif (m|://.*$|) {
+  	    $linea .= $_;
+  	} elsif (m|\s*//.*$|) {
+  	    $linea .= $`;
+  	} else {
+  	    chomp $_;
+  	    $linea .= $_;
+  	}
+      }
+    close CONF;
     return $linea;
+
 }
 
 sub muestraDionaeaConf {
-    print $_;
+      print $_;  
+    
 }
 
 =pod  ipValida recibe como parametro una cadena y dice si es una direccion ip valida.
@@ -407,4 +432,4 @@ sub ipValida{
 
 &menu;
 
-close FH;
+
